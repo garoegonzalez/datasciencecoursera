@@ -1,0 +1,65 @@
+---
+title: "The Central Limit Theorem and the Exponential Distribution "
+author: "Garoe Gonzalez"
+date: "24 de octubre de 2015"
+output: pdf_document
+---
+## Introduction
+
+In this project we use R to investigate the exponential distribution and compare it with the Central Limit Theorem (CLT).
+
+In probability theory and statistics, the exponential distribution is the probability distribution that describes the time between events from a process in which events occur continuously and independently at a constant average rate. The mean of the exponential distribution is $\mu=1/\lambda$ and the standard deviation is also $\sigma=1/\lambda$.
+
+In this project we probe the the central limit theorem using an exponential distribution. This theorem states that, given certain conditions, the arithmetic mean of a sufficiently large number of iterates of independent random variables, each with a well-defined expected value and well-defined variance, will be approximately normally distributed, regardless of the underlying distribution.
+
+## Expontential distributions simulation 
+
+We want to investigate how the arithmetic mean from exponentially distributed samples converges to a normal distribution (proving the CLT). This distribution can be simulated in R with $rexp(n, 1/\lambda)$. For all of the simulations, we set $\lambda=0.2$, and we investigate the distribution of averages of 40 exponentials. We will consider 1000 simulations.
+
+The following code simulates 1000 exponentially distributed samples with 40 values each:
+
+```{r}
+set.seed(1)     # for reproducibility
+n_sim  <- 1000  # number of simulated averages
+lambda <- 0.2   # rate parameter
+#simulation
+mns = NULL
+for (i in 1 : n_sim) mns = c(mns, mean(rexp(40,rate = 1/lambda)))
+```
+
+## Results
+### Simulated vs theoretical mean
+From the 1000 simulations we compare their expected mean with the theoretical one which by construction is $\mu = \lambda =0.2$:
+```{r}
+mean(mns)
+```
+We observed how the results is indeed close the is theoretical value.
+In order to illustrate this, the distribution is plotted below as a density plot, where the position of the sample mean is indicated by a vertical blue line.
+
+```{r}
+library(ggplot2)
+ggplot(data.frame(mns), aes(x = mns)) + 
+     geom_density() +
+     geom_vline(xintercept=mean(mns), size = 1, color = 'blue') 
+````
+
+### Simulated vs theoretical variance
+
+The theoretical value for the variance of the distribution of averages is given by the variance of the original population $\sigma^2$ divided by the number of samples $n$ used to compute the averages : $var(sample)=\frac{\sigma^2}{n}=\frac{\lambda^2}{40}=0.001$. If we compute the variance of the samples, we conclude it is very close to the expected one:
+
+```{r}
+var(mns)
+```
+
+### Probing the Central Limit Theorem
+
+In order to compare the distribution of averages to the Central Limit Theorem (CLT), we plot below the distribution as an histogram along with a normal distribution N($\mu$,$\sigma/\sqrt{n}$).
+
+```{r}
+mu    <- lambda
+sigma <- lambda
+ggplot(data.frame(mns), aes(x = mns)) + 
+geom_histogram(alpha = .10, binwidth=0.01, colour = "black", aes(y = ..density..)) +
+stat_function(geom = "line", fun = dnorm, arg = list(mean = mu, sd = sigma/sqrt(40)),
+              size = 2, color = "blue", fill = NA)
+```
