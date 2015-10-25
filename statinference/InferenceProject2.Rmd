@@ -1,0 +1,77 @@
+---
+title: "Confidence intervals and/or hypothesis tests on the ToothGrowth dataset"
+author: "Garoe Gonzalez"
+date: "25 de octubre de 2015"
+output: pdf_document
+---
+## Introduction
+
+This report show the analysis perform on the ToothGrowth data from the the R datasets package. We present an exploratory analysis of the dataset, confident intervals and hypothesis testing. 
+
+## Exploratory analysis
+
+We start our exploratory analysis by loading the data ToothGrowth from the library datasets and checking its documentation.
+```{r}
+library (datasets)
+?ToothGrowth
+```
+
+From the documentation we obtain a description of the data: *The response is the length of odontoblasts (teeth) in each of 10 guinea pigs at each of three dose levels of Vitamin C (0.5, 1, and 2 mg) with each of two delivery methods (orange juice or ascorbic acid).* The dataset contains 60 observations on 3 variables:
+
+* *len* Tooth length.
+* *supp* Supplement type (VC or OJ).
+* *dose* Dose in milligrams (0.5, 1 or 2 mg).
+
+```{r}
+str(ToothGrowth)
+```
+To explore data we present the tooth length histograms as a function of the different supplement types and three doses.  
+```{r}
+library(ggplot2)
+
+ToothGrowth$dose <-as.factor(ToothGrowth$dose)
+
+ggplot(ToothGrowth, aes(x=dose,y=len,fill=dose)) + 
+     geom_boxplot(notch=F) + facet_grid(.~supp) + 
+     scale_x_discrete("Dose") + 
+     scale_y_continuous("Tooth length") + 
+     ggtitle("Analysis of Tooth length - Dose vs Supp")
+```
+
+## Confidence interval and Hypothesis testing
+
+We are going to compare the growth of tooth by two different methods (VC or OJ) and three different doses of Vitamin C. We compare the two types of supplements overall and then each as related to dose rates. 
+
+For this we run t-confidence tests and collect their p-values and confidence levels. The null hypothesis ($H_0$) is that if the mean is 0 then the samples being tested have no more effect on tooth length than the other. For our tests we assume non equal variances among samples and non-paired observables.
+
+
+
+```{r}
+# we resample the dataset
+dat05 <- subset(ToothGrowth, dose == .5)
+dat1  <- subset(ToothGrowth, dose == 1)
+dat2  <- subset(ToothGrowth, dose == 2)
+
+# we run the tests and collect the results
+tsupp <- t.test(len~I(relevel(supp, 2)), data = ToothGrowth)
+t05 <- t.test(len~I(relevel(supp, 2)), data=dat05)
+t1 <- t.test(len~I(relevel(supp, 2)), data = dat1)
+t2 <- t.test(len~I(relevel(supp, 2)), data = dat2)
+tres <- data.frame("p-value"=c(tsupp$p.value,t05$p.value,t1$p.value,t2$p.value), 
+                   "CI-Lower"=c(tsupp$conf[1],t05$conf[1],t1$conf[1],t2$conf[1]),
+                   "CI-Upper"=c(tsupp$conf[2],t05$conf[2],t1$conf[2],t2$conf[2]),
+                   "Mean VC" =c(tsupp$estimate[1],t05$estimate[1],t1$estimate[1],t2$estimate[1]), 
+                   "Mean OJ" =c(tsupp$estimate[2],t05$estimate[2],t1$estimate[2],t2$estimate[2]), 
+                   row.names=c("OJ vs VC: ", "0.5 dose: ", "1.0 dose: ","2.0 dose: "))
+
+# we print the results
+tres
+```
+
+## Conclusions
+
+First we test which method presents higher tooth growth the OJ or the VC. In this case both method present equivalent results and $H_0$ can not be rejected as the p-value is 6% (greater than the 5% threshold used for statiscal analysis) and the confidence interval contains 0.
+
+Once we split the sample per dose, same conclusions can be extracted for 0.5 and 1.0 mg. In both cases, OJ method presents greater effect than VC since their p-value is bellow 5% and the confidence intervals do not contain 0. 
+
+In the case of 2 mg samples, no difference is found for the different methods and $H_0$ can not be rejected. In this case p-value is 6% and the confidence interval contains 0. 
